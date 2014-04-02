@@ -10,5 +10,14 @@ class Component {
   Component(int left, int top, int width, int height) {
     boundBox = new Math.MutableRectangle(left, top, width, height);
   }
+  
+  void move(int dx, int dy) {
+    boundBox.left += dx;
+    boundBox.top += dy;
+    if(boundBox.left < 0) boundBox.left = 0;
+    else if(boundBox.left > canvas.width - boundBox.width) boundBox.left = canvas.width - boundBox.width;
+    if(boundBox.top < 0) boundBox.top = 0;
+    else if(boundBox.top > canvas.height - boundBox.height) boundBox.top = canvas.height - boundBox.height;
+  }
 
 }

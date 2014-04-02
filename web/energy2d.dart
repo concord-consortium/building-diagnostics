@@ -1,6 +1,8 @@
 library energy2d;
 
+import 'dart:async';
 import 'dart:html';
+import 'dart:isolate';
 import 'dart:math' as Math;
 
 //import 'dart:js' as JavaScript;
@@ -28,6 +30,15 @@ Math.Random random = new Math.Random(0);
 
 void main() {
   
+  // set up our receive port callback
+  ReceivePort port = new ReceivePort();
+  port.listen(waitForResults);
+
+  // launch the worker thread
+  List<String> inputs = [1.0, 2.0];
+  Future future = Isolate.spawnUri(new Uri.file("solver.dart"), inputs, port.sendPort);
+  future.then((value) => print("${value}"));
+   
   Component c = new Component(20, 20, 40, 40);
   components.add(c);
 
@@ -37,11 +48,18 @@ void main() {
 
   _bind();
 
-  backgroundImage.onLoad.listen((e) => requestRedraw());
+  // backgroundImage.onLoad.listen((e) => requestRedraw());
   
   imageData = context.getImageData(0, 0, canvas.width, canvas.height);
   pixels = imageData.data;
   
+  window.animationFrame.then(_vizLoop);
+  
+}
+
+// called in our main thread to update the display
+void waitForResults(List<double> results) {
+  print ("We are ${(results[0]*100).toInt()}% ${results[3]} done.");
 }
 
 void _bind() {
@@ -129,20 +147,21 @@ void _onOverlayMouseDown(MouseEvent e) {
 
 /* visualization */
 
+void _vizLoop(num delta) {
+  components.forEach((c) => c.move(random.nextInt(10) - 5, random.nextInt(10) - 5));
+  requestRedraw();
+  window.animationFrame.then(_vizLoop);
+}
+
 void requestRedraw() {
-    window.requestAnimationFrame(_draw);
+  clear();
+  _drawImageData();
+  context.drawImage(backgroundImage, 0, 20);
+  components.forEach((c) => _drawComponent(c));
 }
 
 void clear() {
   context.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-void _draw(num _) {
-  clear();
-  _drawImageData();
-  context.drawImage(backgroundImage, 0, 20);
-  components.forEach( (c) => _drawComponent(c));
-  requestRedraw();
 }
 
 void _drawComponent(Component c) {
@@ -158,7 +177,6 @@ void _drawImageData() {
   int h = canvas.height;
   int i = 0;
   double r = random.nextDouble();
-  print(r);
   for(int y = 0; y < h; y++) {
     for(int x = 0; x < w; x++) {
       i = 4 * (y * w + x);
