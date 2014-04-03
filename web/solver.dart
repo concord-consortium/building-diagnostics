@@ -14,7 +14,7 @@ void main(List<double> args, SendPort port) {
     double percentComplete = i / 100;
     results.add(percentComplete);
 
-    int n = 100;
+    int n = 5000;
     double sum = 0.0;
     for (int j=0; j<n; j++) {
       for (int k=0; k<n; k++) {

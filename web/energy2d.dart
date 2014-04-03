@@ -14,6 +14,8 @@ final CanvasElement canvas = querySelector("#canvas");
 final CanvasRenderingContext2D context = canvas.context2D;
 final HtmlElement appletWindow = querySelector("#applet_window");
 final HtmlElement overlay = querySelector("#overlay");
+final HtmlElement loadConductionButton = querySelector("#load_conduction");
+final HtmlElement loadConvectionButton = querySelector("#load_convection");
 
 ImageElement backgroundImage = new ImageElement(src: "house.png");
 
@@ -24,25 +26,27 @@ Component selectedComponent;
 num dragStartPointX, dragStartPointY;
 bool drag = false;
 
+String info = "";
 List<Component> components = new List<Component>();
 
 Math.Random random = new Math.Random(0);
+Isolate isolate;
 
 void main() {
   
   // set up our receive port callback
   ReceivePort port = new ReceivePort();
-  port.listen(waitForResults);
+  port.listen(displayResults);
 
   // launch the worker thread
   List<String> inputs = [1.0, 2.0];
   Future future = Isolate.spawnUri(new Uri.file("solver.dart"), inputs, port.sendPort);
-  future.then((value) => print("${value}"));
+  future.then((value) => getIsolate(value));
    
   Component c = new Component(20, 20, 40, 40);
   components.add(c);
 
-  c = new Component(200, 20, 30, 30);
+  c = new Component(canvas.width - 100, canvas.height - 100, 30, 30);
   c.fillStyle = "rgba(0, 255, 0, 0.5)";
   components.add(c);
 
@@ -57,9 +61,15 @@ void main() {
   
 }
 
+void getIsolate(var value) {
+  isolate = value;
+  // print(isolate);  
+}
+
 // called in our main thread to update the display
-void waitForResults(List<double> results) {
-  print ("We are ${(results[0]*100).toInt()}% ${results[3]} done.");
+void displayResults(List<double> results) {
+  info = "${(results[0]*100).toInt()}% ${results[1]}";
+  // print(info);
 }
 
 void _bind() {
@@ -78,13 +88,32 @@ void _onCanvasDoubleClick(MouseEvent e) {
   e.preventDefault();
   selectedComponent = null;
   drag = false;
+  int index = -1;
   for(Component c in components) {
     if (contains(e.client, c.boundBox)) {
       appletWindow.style.display = "block";
       overlay.style.display = "block";
+      index = components.indexOf(c);
+      break;
+     }
+  }
+  switch(index){
+    case 0:
+      loadConductionButton.click();
+      break;
+    case 1:
+      loadConvectionButton.click();
+      break;
+  }
+  if(isolate != null) {
+    try {
+      if(index >= 0) isolate.pause(isolate.pauseCapability);
+      else isolate.resume(isolate.pauseCapability);
+    } catch(err) {
+      print(err);
     }
   }
-  requestRedraw();
+ requestRedraw();
   e.stopPropagation();
 }
 
@@ -148,7 +177,7 @@ void _onOverlayMouseDown(MouseEvent e) {
 /* visualization */
 
 void _vizLoop(num delta) {
-  components.forEach((c) => c.move(random.nextInt(10) - 5, random.nextInt(10) - 5));
+  components.forEach((c) => c.move(random.nextInt(11) - 5, random.nextInt(11) - 5));
   requestRedraw();
   window.animationFrame.then(_vizLoop);
 }
@@ -158,6 +187,9 @@ void requestRedraw() {
   _drawImageData();
   context.drawImage(backgroundImage, 0, 20);
   components.forEach((c) => _drawComponent(c));
+  context.fillStyle = "white";
+  TextMetrics tm = context.measureText(info);
+  context.fillText(info, canvas.width / 2 - tm.width / 2, canvas.height - 20);
 }
 
 void clear() {
