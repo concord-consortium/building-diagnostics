@@ -1,0 +1,149 @@
+<!doctype html>
+
+<html>
+<head>
+<title>SimBuilding</title>
+<script src="js/three.js"></script>
+<script src="js/OrbitControls.js"></script>
+<script src="js/ColladaLoader.js"></script>
+</head>
+
+<body>
+
+
+<script type="x-shader/x-vertex" id="vertexShader">
+ 
+    varying vec3 vWorldPosition;
+ 
+    void main() {
+ 
+        vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+        vWorldPosition = worldPosition.xyz;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+ 
+    }
+ 
+</script>
+
+<script type="x-shader/x-fragment" id="fragmentShader">
+ 
+    uniform vec3 topColor;
+    uniform vec3 bottomColor;
+    uniform float offset;
+    uniform float exponent;
+ 
+    varying vec3 vWorldPosition;
+ 
+    void main() {
+ 
+      float h = normalize( vWorldPosition + offset ).y;
+      gl_FragColor = vec4( mix( bottomColor, topColor, max( pow( h, exponent ), 0.0 ) ), 1.0 );
+ 
+    }
+ 
+</script>
+
+<script>
+   
+    var scene, camera, renderer;
+ 
+    init();
+    animate();
+ 
+  
+    function init() {
+      
+      scene = new THREE.Scene();
+      var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
+ 
+      renderer = new THREE.WebGLRenderer({antialias:true});
+      renderer.setSize(WIDTH, HEIGHT);
+      document.body.appendChild(renderer.domElement);
+ 
+      camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 10000);
+      camera.position.set(50, 150, 100);
+      scene.add(camera);
+ 
+      window.addEventListener('resize', function() {
+        var WIDTH = window.innerWidth, HEIGHT = window.innerHeight;
+        renderer.setSize(WIDTH, HEIGHT);
+        camera.aspect = WIDTH / HEIGHT;
+        camera.updateProjectionMatrix();
+      });
+ 
+      var vertexShader = document.getElementById( 'vertexShader' ).textContent;
+      var fragmentShader = document.getElementById( 'fragmentShader' ).textContent;
+      var uniforms = {
+          topColor:    { type: "c", value: new THREE.Color(0x000000) },
+          bottomColor: { type: "c", value: new THREE.Color( 0x262626 ) },
+          offset:    { type: "f", value: 100 },
+          exponent:  { type: "f", value: 0.7 }
+      }
+    
+      var light = new THREE.PointLight(0xffffff, 1.0);
+      light.position.set(-100, 200, 100);
+      scene.add(light);
+ 
+	  var sphereSize = 1; 
+	  var pointLightHelper = new THREE.PointLightHelper( light, sphereSize ); 
+	  scene.add( pointLightHelper );
+ 
+      var light2 = new THREE.PointLight(0xd7f0ff, 0.2);
+      light2.position.set(200,200,1000);
+      scene.add(light2);
+ 
+	  var sphereSize = 1; 
+	  var pointLightHelper2 = new THREE.PointLightHelper( light2, sphereSize ); 
+	  scene.add( pointLightHelper2 );
+ 
+	  var light3 = new THREE.PointLight(0xFFFFFF, 0.5);
+      light3.position.set(150, 200, -100);
+      scene.add(light3);
+ 
+	  var sphereSize = 1; 
+	  var pointLightHelper3 = new THREE.PointLightHelper( light3, sphereSize ); 
+	  scene.add( pointLightHelper3 );
+	  
+	  var directionalLight = new THREE.DirectionalLight(0xffffff);
+      directionalLight.position.set(-1, 0, 0).normalize();
+      scene.add(directionalLight);
+
+ 
+	  var loader = new THREE.ColladaLoader();
+ 	  loader.options.convertUpAxis = true;
+  	  loader.load( 'house.dae', function ( collada ) {
+   
+	    var dae = collada.scene;
+        var skin = collada.skins[ 0 ];
+ 	  	dae.position.set(0, 0, 0);  // x, z, y
+	  	dae.scale.set(0.1, 0.1, 0.1);
+ 	  	scene.add(dae);
+ 
+	    var axes = new THREE.AxisHelper(50);
+  	  	axes.position = dae.position;
+  	  	scene.add(axes);
+  
+	  	var gridXZ = new THREE.GridHelper(1000, 50);
+  	  	gridXZ.setColors(new THREE.Color(0x8f8f8f), new THREE.Color(0x8f8f8f));
+  	  	gridXZ.position.set(0, 0, 0);
+  	  	scene.add(gridXZ);
+  
+	  });
+      
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+ 
+   }
+ 
+   
+   function animate() {
+      
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+      controls.update();
+ 
+   }
+ 
+</script>
+
+</body>
+</html>
