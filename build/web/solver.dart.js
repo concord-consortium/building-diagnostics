@@ -2229,7 +2229,7 @@ Iq:[function(a,b){var z,y,x,w,v,u,t
 for(z=J.dD(a),y=0;y<100;++y){x=[]
 x.$builtinTypeInfo=[J.VA]
 x.push(y/100)
-for(w=0,v=0;v<100;++v)for(u=y*v,t=0;t<100;++t)w+=Math.cos(u*t)
+for(w=0,v=0;v<5000;++v)for(u=y*v,t=0;t<5000;++t)w+=Math.cos(u*t)
 x.push(w)
 x.push(z.t(a,0))
 x.push(z.t(a,1))
