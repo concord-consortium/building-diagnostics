@@ -37,6 +37,7 @@ h1, p {
 
 #overlay {
   background-color: #aaaaaa;
+  foreground-color: #000000;
   position: absolute;
   top: 0;
   left: 0;
